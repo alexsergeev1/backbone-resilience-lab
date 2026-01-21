@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="A synthetic backbone network with priority routing, fault injection, and repair crew scheduling.">
+  <title>Backbone Resilience Lab</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main>
+  <header><span>Network operations / simulation</span><nav aria-label="Lab sections"><a href="#incident">Incident response</a><a href="#capital">Capital planning</a></nav></header>
+  <section class="hero"><h1>Backbone Resilience Lab</h1><p>Restore a disrupted backbone, then decide where to invest before the next incident.</p></section>
+  <div class="workspace">
+    <aside id="incident" class="panel controls" aria-label="Scenario controls">
+      <h2>Incident setup</h2>
+      <label>Failure preset<select id="preset"></select></label>
+      <label>Demand stress<select id="load"><option value="0.85">85%</option><option value="1" selected>100%</option><option value="1.15">115%</option></select></label>
+      <label>Repair crews<select id="crews"><option>1</option><option selected>2</option><option>3</option></select></label>
+      <label>Custom link<select id="link"></select></label>
+      <button type="button" id="toggle">Toggle failure</button>
+      <button class="primary" type="button" id="run">Plan recovery</button>
+      <p id="status" role="status"></p>
+    </aside>
+    <div class="results">
+      <section class="metrics" aria-label="Scenario metrics">
+        <div class="panel metric"><span>Initial traffic served</span><strong id="served">—</strong></div>
+        <div class="panel metric"><span>Weighted outage hours</span><strong id="loss">—</strong></div>
+        <div class="panel metric"><span>Outage reduction vs greedy</span><strong id="gain">—</strong></div>
+      </section>
+      <section class="panel">
+        <div class="bar"><h2>Backbone map</h2><span id="faultCount"></span></div>
+        <canvas id="topology" width="900" height="455" role="img" aria-label="Backbone topology. The link selector provides keyboard access to failure controls."></canvas>
+        <p class="legend"><span>● Origin</span><span>● Full service</span><span>● Partial service</span><span>┄ Failed link</span></p>
+        <div class="timeline-controls">
+          <label>Recovery policy<select id="strategy"><option value="beam">Beam search</option><option value="greedy">Greedy</option></select></label>
+          <label>Recovery hour <output id="hourValue">0</output><input id="hour" type="range" min="0" max="14" value="0"></label>
+        </div>
+        <p class="note" id="mapHint">Click a link to change the incident. Map line width represents carried traffic.</p>
+      </section>
+      <section class="panel">
+        <div class="bar"><h2>Restoration curve</h2><button type="button" id="export">Export plan CSV</button></div>
+        <canvas id="curve" width="900" height="235" role="img" aria-label="Hourly demand served for beam search and greedy schedules"></canvas>
+        <p class="legend"><span>● Beam search</span><span>● Greedy</span></p>
+        <p class="note" id="comparison"></p>
+      </section>
+      <div class="details">
+        <section class="panel"><h2>Repair schedule</h2><div class="scroll"><table id="repairs"><thead></thead><tbody></tbody></table></div></section>
+        <section class="panel"><h2>Top single-link risks</h2><div class="scroll"><table id="risks"><thead></thead><tbody></tbody></table></div></section>
+      </div>
+      <section class="panel"><h2>City service at selected hour</h2><div class="scroll"><table id="cities"><thead></thead><tbody></tbody></table></div></section>
+      <details id="assumptions" class="panel">
+        <summary>Model assumptions</summary>
+        <p class="note">The cities provide a map for synthetic traffic and links. Routing maximizes delivered traffic, then favors higher-priority demand over aggregate link latency. Every crew handles one link at a time, without travel delays. Beam search compares feasible schedules over 14 hours using weighted unmet demand. It is a bounded search, with greedy retained if the search finds a worse plan. Single-link risks are measured on the starting incident before any repairs.</p>
+      </details>
+    </div>
+  </div>
+  <section id="capital" class="capital" aria-labelledby="capital-title">
+    <div class="capital-heading"><h2 id="capital-title">Capital planning</h2><p>Compare bypasses, hardening, and capacity upgrades against correlated regional failures.</p></div>
+    <div class="workspace">
+      <form class="panel controls" id="capitalForm">
+        <h2>Investment mandate</h2>
+        <label>Budget (simulated $M)<input name="budget" type="number" min="0" max="32" step="1" value="19" required></label>
+        <label>Risk objective<select name="weight"><option value="0">Expected loss</option><option value="0.5" selected>Balanced</option><option value="1">Worst 10% mean</option></select></label>
+        <label>Hazard intensity<select name="stress"><option value="0.7">Moderate</option><option value="1" selected>Severe</option><option value="1.3">Extreme</option></select></label>
+        <label>Scenario seed<input name="seed" type="number" min="0" max="1000000" value="42" required></label>
+        <button class="primary" id="capitalRun" type="submit">Optimize portfolio</button>
+        <p class="note" id="capitalStatus" role="status"></p>
+      </form>
+      <div class="results" id="capitalResults" hidden>
+        <section class="metrics" aria-label="Portfolio results">
+          <div class="panel metric"><span>Selected spend</span><strong id="capitalSpend"></strong></div>
+          <div class="panel metric"><span>Holdout mean loss reduction</span><strong id="capitalMean"></strong></div>
+          <div class="panel metric"><span>Holdout tail loss reduction</span><strong id="capitalTail"></strong></div>
+        </section>
+        <section class="panel">
+          <div class="bar"><h2>Training cost–risk frontier</h2><button id="capitalExport" type="button">Export holdout CSV</button></div>
+          <canvas id="frontier" width="900" height="235" role="img" aria-label="Best training risk score at each efficient budget"></canvas>
+          <p id="capitalChoice" class="note"></p>
+        </section>
+        <section class="panel"><h2>Independent holdout comparison</h2><div class="scroll"><table id="capitalTable"><thead></thead><tbody></tbody></table></div>
+          <p class="note">Plans share the same hazard and demand draws. The tail metric averages the worst 10% of weighted loss. Holdout results can favor a different plan from the training winner.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
+<script type="module" src="./app.mjs"></script>
+<script type="module" src="./capital.mjs"></script>
+</body>
+</html>
